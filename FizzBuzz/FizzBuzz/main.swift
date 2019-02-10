@@ -13,21 +13,42 @@
 
 import Foundation
 
-var i = 1
-while i <= 100 {
-    if i % 3 == 0 && i % 5 == 0 {
-        print("fizzbuzz")
+func fizz(_ i : Int) -> String {
+    if i % 3 == 0 {
+        return "fizz"
     }
-    else if i % 3 == 0 {
-        print("fizz")
+    return ""
+}
+
+func buzz(_ i : Int) -> String {
+    if i % 5 == 0 {
+        return "buzz"
     }
-    else if i % 5 == 0 {
-        print("buzz")
-    }
-    else {
-        print(i)
+    return ""
+}
+
+func fizzbuzz(_ i : Int) -> String {
+    let f = fizz(i)
+    let b = fizz(i)
+    let result = f+b
+    
+    if result.isEmpty {
+        return "\(i)"
     }
     
-    i += 1
+    return result
 }
+
+func loop(min : Int, max: Int, do f: (Int)->Void){
+    var i = min
+    while i <= max {
+        f(i)
+        i += 1
+    }
+}
+
+loop(min: 1, max: 100, do: {i in
+    let result = fizzbuzz(i)
+    print(result)
+})
 

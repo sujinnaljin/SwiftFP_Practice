@@ -13,42 +13,13 @@
 
 import Foundation
 
-func fizz(_ i : Int) -> String {
-    if i % 3 == 0 {
-        return "fizz"
-    }
-    return ""
-}
-
-func buzz(_ i : Int) -> String {
-    if i % 5 == 0 {
-        return "buzz"
-    }
-    return ""
-}
-
-func fizzbuzz(_ i : Int) -> String {
-    let f = fizz(i)
-    let b = fizz(i)
-    let result = f+b
-    
-    if result.isEmpty {
-        return "\(i)"
-    }
-    
-    return result
-}
+let fizz = {i in i % 3 == 0 ? "fizz" : ""}
+let buzz = {i in i % 5 == 0 ? "buzz" : ""}
+let fizzbuzz = {i in { a, b in return b.isEmpty ? a : b}("\(i)", fizz(i)+buzz(i))}
 
 func loop(min : Int, max: Int, do f: (Int)->Void){
-    var i = min
-    while i <= max {
-        f(i)
-        i += 1
-    }
+    Array(min...max).forEach(f)
 }
 
-loop(min: 1, max: 100, do: {i in
-    let result = fizzbuzz(i)
-    print(result)
-})
+loop(min: 1, max: 100, do: { print(fizzbuzz($0))})
 

@@ -33,31 +33,45 @@ loop(min: 1, max: 100, do: { print(fizzbuzz($0))})
  숫자가 입력되지 않으면 Wrong 을 출력합니다.
  */
 
-let answer = Int(arc4random() % 100) + 1
-var count = 0
-
-while true {
-    
-    let userInput = readLine()
-    
-    guard let unwrappedInput = userInput, let inputNumber = Int(unwrappedInput) else {
-        print("Wrong")
-        continue
+func countingLoop(_ needContinue : @escaping () -> Bool, _ finished : (Int)->Void){
+    func counter(_ c : Int) -> Int {
+         if !needContinue() {return c}
+         return counter(c+1)
     }
+    finished(counter(0))
     
-    if inputNumber == answer {
-        print("Correct! : \(count)")
-        break
-    }
-    
-    if inputNumber > answer {
-        print("High")
-    }
-    
-    if inputNumber < answer {
-        print("Low")
-    }
-    
-    count += 1
 }
 
+func corrected(_ count : Int){
+    print("correct! \(count)")
+}
+
+func generateNum(_ min : Int, _ max : Int) -> Int{
+    return Int(arc4random()) % (max-min) + min
+}
+
+func inputAndCheck(_ answer : Int)->()->Bool{
+    return {printResult(evaluateValue(answer))}
+}
+
+func printResult(_ r : Result) -> Bool{
+    if case .correct = r {return false}
+    print(r.rawValue)
+    return true
+}
+
+func evaluateValue(_ answer : Int) -> Result{
+    guard let inputNumber = Int(readLine() ?? "") else { return .wrong}
+    if inputNumber > answer {return .high}
+    if inputNumber < answer {return .low}
+    return .correct
+}
+
+enum Result : String{
+    case low = "Low"
+    case high = "High"
+    case correct = "Correct"
+    case wrong = "Wrong"
+}
+
+countingLoop(inputAndCheck(generateNum(1, 100)), corrected)

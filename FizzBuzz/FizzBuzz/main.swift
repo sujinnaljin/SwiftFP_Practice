@@ -35,8 +35,8 @@ func loop(min : Int, max: Int, do f: (Int)->Void){
 
 func countingLoop(_ needContinue : @escaping () -> Bool, _ finished : (Int)->Void){
     func counter(_ c : Int) -> Int {
-         if !needContinue() {return c}
-         return counter(c+1)
+        if !needContinue() {return c}
+        return counter(c+1)
     }
     finished(counter(0))
     
@@ -114,37 +114,61 @@ struct Weather: Codable {
     let predictability: Float
 }
 
-let query = "seoul"
-let locQueryUrl = URL(string: "https://www.metaweather.com/api/location/search?query=\(query)")!
-
-if let locData = try? Data(contentsOf: locQueryUrl) {
-    if let locations = try? JSONDecoder().decode([Location].self, from: locData) {
-        
-        for location in locations {
-            print("[\(location.title)]")
-            
-            let woeid = location.woeid
-            let weatherUrl = URL(string: "https://www.metaweather.com/api/location/\(woeid)")!
-            
-            if let weatherData = try? Data(contentsOf: weatherUrl) {
-                if let weatherInfo = try? JSONDecoder().decode(WeatherInfo.self, from: weatherData) {
-                    
-                    let weathers = weatherInfo.consolidated_weather
-                    for weather in weathers {
-                        let state = weather.weather_state_name.padding(toLength: 15,
-                                                                       withPad: " ",
-                                                                       startingAt: 0)
-                        let forecast = String(format: "%@: %@ %2.2f°C ~ %2.2f°C",
-                                              weather.applicable_date,
-                                              state,
-                                              weather.max_temp,
-                                              weather.min_temp)
-                        print(forecast)
-                    }
-                }
-            }
-            
-            print("")
+//데이터
+func getData(_ url : URL, _ completed : @escaping (Data)->()){
+    DispatchQueue.global().async {
+        if let data = try? Data(contentsOf: url) {
+            print(Thread.current)
+            completed(data)
         }
     }
 }
+
+//지역
+func getLocation(_ loaction : String, completed:@escaping ([Location])->Void){
+    let url = URL(string: "https://www.metaweather.com/api/location/search?query=\(loaction)")!
+    getData(url) { (data) in
+        if let locations = try? JSONDecoder().decode([Location].self, from: data) {
+            completed(locations)
+        }
+    }
+}
+
+//날씨
+func getWeathers(_ woeid : Int, completed : @escaping ([Weather])->()){
+    let url = URL(string: "https://www.metaweather.com/api/location/\(woeid)")!
+    getData(url) { (data) in
+        if let weatherInfo = try? JSONDecoder().decode(WeatherInfo.self, from: data) {
+            completed(weatherInfo.consolidated_weather)
+        }
+    }
+}
+
+//프린트
+func printWeather(_ weather : Weather){
+    
+    let state = weather.weather_state_name.padding(toLength: 15,
+                                                   withPad: " ",
+                                                   startingAt: 0)
+    let forecast = String(format: "%@: %@ %2.2f°C ~ %2.2f°C",
+                          weather.applicable_date,
+                          state,
+                          weather.max_temp,
+                          weather.min_temp)
+    print(forecast)
+    
+}
+
+getLocation("san") { (locations) in
+    locations.forEach({ (location) in
+        getWeathers(location.woeid){ (weathers) in
+            print("[\(location.title)]")
+            weathers.forEach({ (weather) in
+                printWeather(weather)
+            })
+            print("")
+        }
+    })
+}
+
+RunLoop.main.run()

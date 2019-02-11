@@ -159,7 +159,7 @@ func printWeather(_ weather : Weather){
     
 }
 
-getLocation("san") { (locations) in
+/*getLocation("san") { (locations) in
     locations.forEach({ (location) in
         getWeathers(location.woeid){ (weathers) in
             print("[\(location.title)]")
@@ -171,4 +171,132 @@ getLocation("san") { (locations) in
     })
 }
 
-RunLoop.main.run()
+RunLoop.main.run()*/
+
+/*
+ 자동 판매기 프로젝트
+ 1. 상품은 콜라(1000), 사이다(1100), 환타(1200)
+ 2. 사용가능 지폐는 100, 500, 1000
+ 3. 현재 입력된 금액을 표시
+ 4. 상품이 나오면 상품 금액만큼 현재 금액에서 차감
+ 5. 입력된 금액이 상품 가격보다 낮으면 상품이 나오지 않음
+ 6. 반환 버튼을 누르면 현재 잔액이 모두 나옴
+ 
+ 프로그램은 콘솔에서 동작하는 것을 기본으로 합니다.
+ 그래서 입력값은 사용자로부터 명령어를 입력받아 처리합니다.
+ 출력값도 콘솔출력으로 처리합니다.
+ 
+ <수행 결과 예시>
+ 100
+ 현재 금액은 100 입니다.
+ 500
+ 현재 금액은 600 입니다.
+ cola
+ 잔액이 부족합니다.
+ 500
+ 현재 금액은 1100 입니다.
+ cola
+ 콜라(1000원) 상품이 나왔습니다.
+ 현재 금액은 100 입니다.
+ reset
+ 잔액 100원이 나왔습니다.
+ 현재 금액은 0 입니다.
+ */
+
+enum Product : Int{
+    case cola = 1000
+    case cider = 1100
+    case fanta = 1200
+    func name() -> String {
+        switch self {
+        case .cola:
+            return "콜라"
+        case .cider:
+            return "사이다"
+        case .fanta:
+            return "환타"
+        }
+    }
+}
+
+enum Input {
+    case moneyInput(Int)
+    case productInput(Product)
+    case reset
+    case none
+}
+
+enum Output {
+    case displayMoney(Int)
+    case productOut(Product)
+    case shortMoneyError
+    case change(Int)
+}
+
+struct State {
+    let money : Int
+}
+
+func consoleInput() -> Input  {
+    guard let command = readLine() else { return .none }
+    switch command {
+    case "100": return .moneyInput(100)
+    case "500": return .moneyInput(500)
+    case "1000": return .moneyInput(1000)
+    case "cola": return .productInput(.cola)
+    case "cider": return .productInput(.cider)
+    case "fanta": return .productInput(.fanta)
+    case "reset": return .reset
+    default: return .none
+    }
+}
+
+func consoleOutput(_ output : Output){
+    switch output {
+    case .displayMoney(let m):
+        print("현재금액은 \(m)원입니다.")
+    case .productOut(let p):
+        print("\(p.name())이 나왔습니다")
+    case .shortMoneyError:
+        print("잔액이 부족합니다")
+    case .change(let c):
+        print("잔액 \(c)원이 나왔습니다")
+    }
+}
+
+func operation(_ inp:@escaping ()->Input, _ out : @escaping (Output)->()) -> (State) -> State {
+    return { state in
+        let input = inp()
+        switch input {
+        case .moneyInput(let m):
+            let money = state.money + m
+            out(.displayMoney(money))
+            return(State(money: money))
+        case .productInput(let p):
+            if state.money < p.rawValue {
+                out(.shortMoneyError)
+                return state
+            }
+            out(.productOut(p))
+            let money = state.money - p.rawValue
+            out(.displayMoney(money))
+            return(State(money: money))
+        case .reset:
+            out(.change(state.money))
+            out(.displayMoney(0))
+            return State(money: 0)
+        case .none:
+            return state
+        }
+    }
+}
+
+func machineLoop(_ f : @escaping (State)->State){
+    func loop(_ s : State){
+        loop(f(s))
+    }
+    loop(State(money: 0))
+}
+
+
+machineLoop(operation(consoleInput, consoleOutput))
